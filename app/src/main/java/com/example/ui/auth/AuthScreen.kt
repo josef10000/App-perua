@@ -53,6 +53,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -89,7 +91,7 @@ fun AuthScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(
-                androidx.compose.ui.graphics.Brush.verticalGradient(
+                Brush.verticalGradient(
                     colors = listOf(SlateNavy, Color(0xFF090D16))
                 )
             )
@@ -101,7 +103,7 @@ fun AuthScreen(
             shape = RoundedCornerShape(24.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .androidx.compose.ui.draw.shadow(16.dp, RoundedCornerShape(24.dp))
+                .shadow(16.dp, RoundedCornerShape(24.dp))
                 .verticalScroll(rememberScrollState())
         ) {
             Column(
@@ -116,7 +118,7 @@ fun AuthScreen(
                         .size(72.dp)
                         .clip(CircleShape)
                         .background(
-                            androidx.compose.ui.graphics.Brush.linearGradient(
+                            Brush.linearGradient(
                                 colors = listOf(YellowPrimary, Color(0xFFFBBF24))
                             )
                         ),
