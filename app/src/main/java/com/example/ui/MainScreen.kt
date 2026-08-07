@@ -211,7 +211,7 @@ fun MainScreen(
                     NavigationBarItem(
                         selected = currentTab == item.routeIndex,
                         onClick = {
-                            if (currentRole == UserRole.DRIVER) {
+                            if (activeRole == UserRole.DRIVER) {
                                 selectedDriverTab = item.routeIndex
                             } else {
                                 selectedParentTab = item.routeIndex
