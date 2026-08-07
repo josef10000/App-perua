@@ -24,6 +24,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.Button
@@ -50,251 +51,199 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.ui.theme.OnPrimaryContainerDark
+import com.example.ui.theme.PrimaryContainerLavender
+import com.example.ui.theme.PrimaryPurple
+import com.example.ui.theme.SecondaryMint
 import com.example.ui.theme.SlateDark
-import com.example.ui.theme.SlateNavy
-import com.example.ui.theme.YellowPrimary
 
 @Composable
-fun SupabaseArchitectureScreen(
+fun FirebaseArchitectureScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     var selectedTab by remember { mutableIntStateOf(0) }
 
-    val sqlScript = """
--- 1. EXTENSÕES & TABELAS BASE SUPABASE
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+    val securityRulesScript = """
+// ===== 1. FIREBASE FIRESTORE SECURITY RULES (firestore.rules) =====
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    function isDriver() {
+      return isAuthenticated() && request.auth.token.role == 'driver';
+    }
 
--- Tabela de Usuários (Motoristas e Pais)
-CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    email TEXT UNIQUE NOT NULL,
-    role TEXT NOT NULL CHECK (role IN ('driver', 'parent')),
-    name TEXT NOT NULL,
-    van_identifier TEXT DEFAULT 'Perua #102',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+    // Users Collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if request.auth.uid == userId;
+    }
 
--- Tabela de Rotas do Motorista
-CREATE TABLE routes (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    driver_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    is_active BOOLEAN DEFAULT FALSE,
-    started_at TIMESTAMP WITH TIME ZONE,
-    ended_at TIMESTAMP WITH TIME ZONE
-);
+    // Van Invites & Vinculation Code (PERUA-TIO-CARLOS)
+    match /van_invites/{code} {
+      allow read: if isAuthenticated();
+      allow write: if isDriver();
+    }
 
--- Tabela de Logs de Localização GPS em Tempo Real
-CREATE TABLE location_logs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    route_id UUID REFERENCES routes(id) ON DELETE CASCADE,
-    latitude DOUBLE PRECISION NOT NULL,
-    longitude DOUBLE PRECISION NOT NULL,
-    heading REAL DEFAULT 0,
-    speed REAL DEFAULT 0,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+    // Announcements Collection (Mural de Avisos)
+    match /announcements/{announcementId} {
+      allow read: if isAuthenticated();
+      allow create, delete: if isDriver();
+    }
 
--- Tabela do Mural de Comunicados
-CREATE TABLE announcements (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    driver_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    message TEXT NOT NULL,
-    is_urgent BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Tabela de Configurações de Pagamento Pix
-CREATE TABLE payments_info (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    driver_id UUID UNIQUE REFERENCES users(id) ON DELETE CASCADE,
-    pix_key TEXT NOT NULL,
-    pix_key_type TEXT NOT NULL,
-    monthly_fee NUMERIC(10,2) NOT NULL DEFAULT 380.00,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- 2. ROTAS E RLS (ROW LEVEL SECURITY)
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE routes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE location_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE announcements ENABLE ROW LEVEL SECURITY;
-ALTER TABLE payments_info ENABLE ROW LEVEL SECURITY;
-
--- Políticas de Leitura Pública/Autenticada para o MVP
-CREATE POLICY "Leitura autenticada para todos os usuarios" ON users FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Leitura de rotas ativas" ON routes FOR SELECT USING (true);
-CREATE POLICY "Leitura de localizacao em tempo real" ON location_logs FOR SELECT USING (true);
-CREATE POLICY "Leitura de comunicados" ON announcements FOR SELECT USING (true);
-CREATE POLICY "Leitura de informacoes Pix" ON payments_info FOR SELECT USING (true);
-
--- Escrita restrita ao motorista
-CREATE POLICY "Motorista atualiza propria rota" ON routes FOR ALL USING (auth.uid() = driver_id);
-CREATE POLICY "Motorista insere logs de GPS" ON location_logs FOR INSERT WITH CHECK (true);
-CREATE POLICY "Motorista posta comunicados" ON announcements FOR INSERT WITH CHECK (auth.uid() = driver_id);
-
--- 3. HABILITAR SUPABASE REALTIME REPLICATION NA TABELA LOCATION_LOGS
-ALTER PUBLICATION supabase_realtime ADD TABLE location_logs;
-    """.trimIndent()
-
-    val hookScript = """
-// src/hooks/useBackgroundLocation.ts
-import { useEffect, useState } from 'react';
-import * as Location from 'expo-location';
-import * as TaskManager from 'expo-task-manager';
-import { supabase } from '../lib/supabase';
-
-const LOCATION_TASK_NAME = 'BACKGROUND_VAN_LOCATION_TASK';
-
-TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
-  if (error) {
-    console.error('Erro na task de localização em segundo plano:', error);
-    return;
-  }
-  if (data) {
-    const { locations } = data as { locations: Location.LocationObject[] };
-    const location = locations[0];
-    if (location) {
-      const { latitude, longitude, heading, speed } = location.coords;
-
-      // Envia coordenadas diretamente ao Supabase Realtime
-      await supabase.from('location_logs').insert([
-        {
-          latitude,
-          longitude,
-          heading: heading || 0,
-          speed: (speed || 0) * 3.6, // m/s para km/h
-          updated_at: new Date().toISOString(),
-        },
-      ]);
+    // Payment Info
+    match /payments_info/{driverId} {
+      allow read: if isAuthenticated();
+      allow write: if isDriver() && request.auth.uid == driverId;
     }
   }
-});
-
-export const useBackgroundLocation = (routeId: string | null, isActive: boolean) => {
-  const [permissionGranted, setPermissionGranted] = useState(false);
-
-  useEffect(() => {
-    (async () => {
-      const { status: fgStatus } = await Location.requestForegroundPermissionsAsync();
-      const { status: bgStatus } = await Location.requestBackgroundPermissionsAsync();
-
-      if (fgStatus === 'granted' && bgStatus === 'granted') {
-        setPermissionGranted(true);
-      }
-    })();
-  }, []);
-
-  useEffect(() => {
-    if (isActive && permissionGranted && routeId) {
-      Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
-        accuracy: Location.Accuracy.High,
-        timeInterval: 5000, // 5 segundos
-        distanceInterval: 5, // 5 metros
-        showsBackgroundLocationIndicator: true,
-        foregroundService: {
-          notificationTitle: 'Perua Escolar em Rota',
-          notificationBody: 'Transmitindo localização para os pais...',
-        },
-      });
-    } else {
-      Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME).then((started) => {
-        if (started) {
-          Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
-        }
-      });
-    }
-  }, [isActive, permissionGranted, routeId]);
-
-  return { permissionGranted };
-};
-    """.trimIndent()
-
-    val mapScript = """
-// src/screens/ParentMapScreen.tsx
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Text } from 'react-native';
-import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
-import { supabase } from '../lib/supabase';
-
-interface VanLocation {
-  latitude: number;
-  longitude: number;
-  heading: number;
-  speed: number;
 }
 
-export const ParentMapScreen = () => {
-  const [vanLocation, setVanLocation] = useState<VanLocation | null>({
-    latitude: -23.5617,
-    longitude: -46.6560,
-    heading: 45,
-    speed: 32,
-  });
+// ===== 2. FIREBASE REALTIME DATABASE SECURITY RULES (database.rules.json) =====
+// Utilizado para streaming de GPS com baixa latência (<1s)
+{
+  "rules": {
+    "live_location": {
+      "${'$'}route_id": {
+        ".read": "auth != null",
+        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'driver'",
+        ".indexOn": ["timestamp"]
+      }
+    }
+  }
+}
 
-  useEffect(() => {
-    // Inscreve no canal Supabase Realtime para escutar inserts na location_logs
-    const channel = supabase
-      .channel('realtime_van_tracker')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'location_logs' },
-        (payload) => {
-          const newLoc = payload.new;
-          setVanLocation({
-            latitude: newLoc.latitude,
-            longitude: newLoc.longitude,
-            heading: newLoc.heading,
-            speed: newLoc.speed,
-          });
+    """.trimIndent()
+
+    val kotlinRepositoryScript = """
+// ===== FIREBASE TRANSPORT REPOSITORY (KOTLIN ANDROID) =====
+package com.example.data.repository
+
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.messaging.FirebaseMessaging
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+
+class FirebaseTransportRepository(
+    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    private val realtimeDb: FirebaseDatabase = FirebaseDatabase.getInstance()
+) {
+
+    // 1. Envia coordenadas GPS em Tempo Real para o Firebase Realtime DB
+    fun updateLiveLocation(routeId: String, lat: Double, lng: Double, heading: Float, speed: Float) {
+        val locationMap = mapOf(
+            "latitude" to lat,
+            "longitude" to lng,
+            "heading" to heading,
+            "speed" to speed,
+            "timestamp" to System.currentTimeMillis()
+        )
+        realtimeDb.getReference("live_location").child(routeId).setValue(locationMap)
+    }
+
+    // 2. Escuta a localização ao vivo da Perua no App dos Pais (Flow)
+    fun observeLiveLocation(routeId: String): Flow<LocationUpdate?> = callbackFlow {
+        val ref = realtimeDb.getReference("live_location").child(routeId)
+        val listener = ref.addValueEventListener(object : com.google.firebase.database.ValueEventListener {
+            override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {
+                val lat = snapshot.child("latitude").getValue(Double::class.java) ?: return
+                val lng = snapshot.child("longitude").getValue(Double::class.java) ?: return
+                val heading = snapshot.child("heading").getValue(Float::class.java) ?: 0f
+                val speed = snapshot.child("speed").getValue(Float::class.java) ?: 0f
+                
+                trySend(LocationUpdate(lat, lng, heading, speed))
+            }
+
+            override fun onCancelled(error: com.google.firebase.database.DatabaseError) {
+                close(error.toException())
+            }
+        })
+
+        awaitClose { ref.removeEventListener(listener) }
+    }
+
+    // 3. Posta Comunicado no Firestore
+    fun postAnnouncement(driverId: String, driverName: String, message: String, isUrgent: Boolean) {
+        val ann = mapOf(
+            "driverId" to driverId,
+            "driverName" to driverName,
+            "message" to message,
+            "isUrgent" to isUrgent,
+            "timestamp" to com.google.firebase.Timestamp.now()
+        )
+        firestore.collection("announcements").add(ann)
+    }
+}
+
+data class LocationUpdate(val latitude: Double, val longitude: Double, val heading: Float, val speed: Float)
+    """.trimIndent()
+
+    val fcmMessagingScript = """
+// ===== FIREBASE CLOUD MESSAGING SERVICE (MyFirebaseMessagingService.kt) =====
+package com.example.service
+
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.os.Build
+import androidx.core.app.NotificationCompat
+import com.google.firebase.messaging.FirebaseMessagingService
+import com.google.firebase.messaging.RemoteMessage
+
+class MyFirebaseMessagingService : FirebaseMessagingService() {
+
+    override fun onMessageReceived(remoteMessage: RemoteMessage) {
+        super.onMessageReceived(remoteMessage)
+
+        val title = remoteMessage.notification?.title ?: remoteMessage.data["title"] ?: "Rota Escolar"
+        val body = remoteMessage.notification?.body ?: remoteMessage.data["body"] ?: "A perua está próxima!"
+
+        showNotification(title, body)
+    }
+
+    private fun showNotification(title: String, body: String) {
+        val channelId = "school_van_alerts"
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                channelId,
+                "Alertas da Perua Escolar",
+                NotificationManager.IMPORTANCE_HIGH
+            )
+            notificationManager.createNotificationChannel(channel)
         }
-      )
-      .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
+        val notification = NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .build()
 
-  return (
-    <View style={styles.container}>
-      {vanLocation && (
-        <MapView
-          style={styles.map}
-          provider={PROVIDER_DEFAULT}
-          initialRegion={{
-            latitude: vanLocation.latitude,
-            longitude: vanLocation.longitude,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
-          }}
-        >
-          <Marker
-            coordinate={{
-              latitude: vanLocation.latitude,
-              longitude: vanLocation.longitude,
-            }}
-            title="Perua do Tio Carlos"
-            description={"Velocidade: " + Math.round(vanLocation.speed) + " km/h"}
-            rotation={vanLocation.heading}
-            flat={true}
-          />
-        </MapView>
-      )}
-    </View>
-  );
-};
+        notificationManager.notify(System.currentTimeMillis().toInt(), notification)
+    }
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  map: { width: '100%', height: '100%' },
-});
+    override fun onNewToken(token: String) {
+        // Envia o novo token FCM ao Firestore do perfil do usuário
+        println("FCM Device Token: ${'$'}token")
+    }
+
+}
     """.trimIndent()
 
     val currentText = when (selectedTab) {
-        0 -> sqlScript
-        1 -> hookScript
-        else -> mapScript
+        0 -> securityRulesScript
+        1 -> kotlinRepositoryScript
+        else -> fcmMessagingScript
     }
 
     Column(
@@ -310,28 +259,28 @@ const styles = StyleSheet.create({
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = SlateNavy)
+            colors = CardDefaults.cardColors(containerColor = PrimaryPurple)
         ) {
             Column(modifier = Modifier.padding(18.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = Icons.Default.Terminal,
-                        contentDescription = "Script",
-                        tint = YellowPrimary,
+                        imageVector = Icons.Default.LocalFireDepartment,
+                        contentDescription = "Firebase",
+                        tint = Color(0xFFFFCA28),
                         modifier = Modifier.size(28.dp)
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(
-                            text = "ARQUITETURA SUPABASE & EXPO",
+                            text = "ARQUITETURA 100% FIREBASE",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = Color.White
                         )
                         Text(
-                            text = "Código SQL RLS, Realtime Replication e Hooks React Native",
+                            text = "Firestore, Realtime Database GPS, Rules & FCM Push",
                             fontSize = 11.sp,
-                            color = Color.LightGray
+                            color = PrimaryContainerLavender
                         )
                     }
                 }
@@ -342,11 +291,11 @@ const styles = StyleSheet.create({
         TabRow(
             selectedTabIndex = selectedTab,
             containerColor = Color.White,
-            contentColor = SlateNavy,
+            contentColor = PrimaryPurple,
             indicator = { tabPositions ->
                 TabRowDefaults.SecondaryIndicator(
                     Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                    color = SlateNavy,
+                    color = PrimaryPurple,
                     height = 3.dp
                 )
             }
@@ -354,17 +303,17 @@ const styles = StyleSheet.create({
             Tab(
                 selected = selectedTab == 0,
                 onClick = { selectedTab = 0 },
-                text = { Text("1. SQL Supabase", fontSize = 11.sp, fontWeight = FontWeight.Bold) }
+                text = { Text("1. Security Rules", fontSize = 11.sp, fontWeight = FontWeight.Bold) }
             )
             Tab(
                 selected = selectedTab == 1,
                 onClick = { selectedTab = 1 },
-                text = { Text("2. Hook GPS", fontSize = 11.sp, fontWeight = FontWeight.Bold) }
+                text = { Text("2. Kotlin Repository", fontSize = 11.sp, fontWeight = FontWeight.Bold) }
             )
             Tab(
                 selected = selectedTab == 2,
                 onClick = { selectedTab = 2 },
-                text = { Text("3. Tela Mapa", fontSize = 11.sp, fontWeight = FontWeight.Bold) }
+                text = { Text("3. FCM Messaging", fontSize = 11.sp, fontWeight = FontWeight.Bold) }
             )
         }
 
@@ -372,7 +321,7 @@ const styles = StyleSheet.create({
         Button(
             onClick = {
                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                val clip = ClipData.newPlainText("Codigo Arquitetura", currentText)
+                val clip = ClipData.newPlainText("Codigo Firebase", currentText)
                 clipboard.setPrimaryClip(clip)
                 Toast.makeText(context, "Código copiado para a área de transferência!", Toast.LENGTH_SHORT).show()
             },
@@ -380,11 +329,11 @@ const styles = StyleSheet.create({
                 .fillMaxWidth()
                 .height(48.dp),
             shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = SlateNavy)
+            colors = ButtonDefaults.buttonColors(containerColor = PrimaryPurple)
         ) {
-            Icon(Icons.Default.ContentCopy, contentDescription = "Copiar", tint = YellowPrimary)
+            Icon(Icons.Default.ContentCopy, contentDescription = "Copiar", tint = Color.White)
             Spacer(modifier = Modifier.width(8.dp))
-            Text("COPIAR ESTE CÓDIGO", fontWeight = FontWeight.Bold, color = Color.White)
+            Text("COPIAR CÓDIGO FIREBASE", fontWeight = FontWeight.Bold, color = Color.White)
         }
 
         // Code Viewer Box
@@ -401,7 +350,7 @@ const styles = StyleSheet.create({
                     text = currentText,
                     fontFamily = FontFamily.Monospace,
                     fontSize = 11.sp,
-                    color = Color(0xFF38BDF8),
+                    color = Color(0xFFFFE082),
                     lineHeight = 16.sp
                 )
             }
@@ -410,3 +359,4 @@ const styles = StyleSheet.create({
         Spacer(modifier = Modifier.height(24.dp))
     }
 }
+

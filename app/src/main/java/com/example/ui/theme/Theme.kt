@@ -11,35 +11,38 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
-private val DarkColorScheme = darkColorScheme(
-    primary = YellowPrimary,
-    onPrimary = SlateDark,
-    primaryContainer = YellowDark,
-    onPrimaryContainer = Color.White,
-    secondary = AccentBlue,
-    onSecondary = Color.White,
-    background = BackgroundDark,
-    onBackground = Color.White,
-    surface = SurfaceDark,
-    onSurface = Color.White,
-    surfaceVariant = SurfaceVariantDark,
-    onSurfaceVariant = Color(0xFFCBD5E1)
+private val LightColorScheme = lightColorScheme(
+    primary = PrimaryPurple,
+    onPrimary = OnPrimaryWhite,
+    primaryContainer = PrimaryContainerLavender,
+    onPrimaryContainer = OnPrimaryContainerDark,
+    secondary = SecondaryMint,
+    onSecondary = OnPrimaryWhite,
+    secondaryContainer = SecondaryMintContainer,
+    onSecondaryContainer = SecondaryMint,
+    tertiary = PrimaryPurple,
+    background = BackgroundLight,
+    onBackground = TextPrimaryDark,
+    surface = SurfaceLight,
+    onSurface = TextPrimaryDark,
+    surfaceVariant = SurfaceVariantLight,
+    onSurfaceVariant = TextSecondaryMuted,
+    outline = OutlineLight
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = YellowDark,
-    onPrimary = Color.White,
-    primaryContainer = YellowLight,
-    onPrimaryContainer = SlateDark,
-    secondary = SlateNavy,
-    onSecondary = Color.White,
-    tertiary = AccentBlue,
-    background = BackgroundLight,
-    onBackground = SlateDark,
-    surface = SurfaceLight,
-    onSurface = SlateDark,
+private val DarkColorScheme = darkColorScheme(
+    primary = PrimaryContainerLavender,
+    onPrimary = OnPrimaryContainerDark,
+    primaryContainer = PrimaryPurple,
+    onPrimaryContainer = OnPrimaryWhite,
+    secondary = SecondaryMintContainer,
+    onSecondary = SecondaryMint,
+    background = TextPrimaryDark,
+    onBackground = BackgroundLight,
+    surface = TextPrimaryDark,
+    onSurface = BackgroundLight,
     surfaceVariant = SurfaceVariantLight,
-    onSurfaceVariant = SlateNavy
+    onSurfaceVariant = OutlineLight
 )
 
 @Composable
