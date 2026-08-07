@@ -37,10 +37,20 @@ jobs:
       - name: Run Android Unit Tests
         run: ./gradlew testDebugUnitTest --continue || echo "Nenhum teste unitário falhou fatalmente"
 
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug
+      - name: Generate Production Release Keystore
+        run: |
+          keytool -genkeypair -v -keystore app/release.keystore -alias rotaescolar -keyalg RSA -keysize 2048 -validity 10000 -storepass RotaEscolar2026! -keypass RotaEscolar2026! -dname "CN=Rota Escolar, OU=Transporte, O=Rota Escolar, L=Sao Paulo, ST=SP, C=BR"
 
-      - name: Upload APK Artifact
+      - name: Build Official Production Release & Debug APKs
+        run: ./gradlew assembleRelease assembleDebug
+
+      - name: Upload Official Production Release APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-oficial-apk
+          path: app/build/outputs/apk/release/app-release.apk
+
+      - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
