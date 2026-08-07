@@ -31,18 +31,18 @@ class TransportRepository private constructor() {
 
     val driverUser = UserProfile(
         id = "driver_102",
-        name = "Carlos Eduardo (Tio Carlos)",
-        email = "carlos.van@escola.com",
+        name = "Motorista",
+        email = "",
         role = UserRole.DRIVER,
-        vanIdentifier = "Perua Amarela #102 - Mercedes Sprinter"
+        vanIdentifier = "Perua Cadastrada"
     )
 
     val parentUser = UserProfile(
         id = "parent_501",
-        name = "Maria Silva (Mãe do Lucas)",
-        email = "maria.silva@email.com",
+        name = "Responsável",
+        email = "",
         role = UserRole.PARENT,
-        vanIdentifier = "Perua Amarela #102 - Tio Carlos"
+        vanIdentifier = "Perua Cadastrada"
     )
 
     // Route State
@@ -123,22 +123,21 @@ class TransportRepository private constructor() {
     fun startRoute() {
         if (_routeState.value.isActive) return
 
-        currentWaypointIndex = 0
         val startLocation = waypoints[0]
         _routeState.value = RouteState(
             id = "route_${System.currentTimeMillis()}",
             driverId = driverUser.id,
             isActive = true,
             startedAt = System.currentTimeMillis(),
-            currentSpeedKmH = 28f,
-            headingDegrees = 110f,
+            currentSpeedKmH = 0f,
+            headingDegrees = 0f,
             currentLocation = LocationLog(
                 id = "loc_start",
                 routeId = "route_active",
                 latitude = startLocation.first,
                 longitude = startLocation.second,
-                heading = 110f,
-                speed = 28f
+                heading = 0f,
+                speed = 0f
             )
         )
 
@@ -147,7 +146,21 @@ class TransportRepository private constructor() {
             stop.copy(isDone = false, isCurrentTarget = idx == 0)
         }
 
-        startLocationSimulation()
+        // Transmite localização inicial com 0 km/h (Veículo Parado / Em Espera)
+        try {
+            FirebaseGpsRepository.getInstance().updateDriverLocation(
+                driverId = driverUser.id,
+                location = RealtimeLocationData(
+                    latitude = startLocation.first,
+                    longitude = startLocation.second,
+                    speedKmh = 0.0f,
+                    bearing = 0.0f,
+                    status = "PARADO / EM ESPERA",
+                    driverName = driverUser.name,
+                    vanIdentifier = driverUser.vanIdentifier
+                )
+            )
+        } catch (_: Exception) {}
     }
 
     fun stopRoute() {
@@ -157,9 +170,12 @@ class TransportRepository private constructor() {
             endedAt = System.currentTimeMillis(),
             currentSpeedKmH = 0f
         )
+        try {
+            FirebaseGpsRepository.getInstance().stopRouteTransmission(driverUser.id)
+        } catch (_: Exception) {}
     }
 
-    fun updateLocationManually(lat: Double, lng: Double, speed: Float = 35f, heading: Float = 90f) {
+    fun updateLocationManually(lat: Double, lng: Double, speed: Float = 0f, heading: Float = 0f) {
         if (!_routeState.value.isActive) return
         val current = _routeState.value
         val log = LocationLog(
@@ -176,6 +192,23 @@ class TransportRepository private constructor() {
             headingDegrees = heading,
             currentLocation = log
         )
+
+        checkGeofenceProximity(lat, lng)
+
+        try {
+            FirebaseGpsRepository.getInstance().updateDriverLocation(
+                driverId = driverUser.id,
+                location = RealtimeLocationData(
+                    latitude = lat,
+                    longitude = lng,
+                    speedKmh = speed,
+                    bearing = heading,
+                    status = if (speed > 0) "EM MOVIMENTO" else "PARADO",
+                    driverName = driverUser.name,
+                    vanIdentifier = driverUser.vanIdentifier
+                )
+            )
+        } catch (_: Exception) {}
     }
 
     private fun startLocationSimulation() {

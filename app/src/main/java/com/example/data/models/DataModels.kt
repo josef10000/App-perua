@@ -10,7 +10,7 @@ data class UserProfile(
     val name: String,
     val email: String,
     val role: UserRole,
-    val vanIdentifier: String = "Perua Amarela - Tio Carlos (#102)"
+    val vanIdentifier: String = "Perua Cadastrada"
 )
 
 data class LocationLog(

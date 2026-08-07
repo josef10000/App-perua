@@ -125,7 +125,7 @@ fun MainScreen(
         return
     }
 
-    val currentRole by viewModel.currentRole.collectAsState()
+    val activeRole = userProfile?.role ?: UserRole.DRIVER
     var selectedDriverTab by remember { mutableIntStateOf(0) }
     var selectedParentTab by remember { mutableIntStateOf(0) }
 
@@ -176,7 +176,7 @@ fun MainScreen(
                                     color = Color.White
                                 )
                                 Text(
-                                    text = if (currentRole == UserRole.DRIVER) "Perfil: Motorista" else "Perfil: Pais",
+                                    text = if (activeRole == UserRole.DRIVER) "Perfil: Motorista" else "Perfil: Responsável",
                                     fontSize = 11.sp,
                                     color = Color.LightGray
                                 )
@@ -184,37 +184,6 @@ fun MainScreen(
                         }
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            // Role Switcher Button
-                            Surface(
-                                onClick = {
-                                    val nextRole = if (currentRole == UserRole.DRIVER) UserRole.PARENT else UserRole.DRIVER
-                                    viewModel.switchRole(nextRole)
-                                },
-                                shape = RoundedCornerShape(20.dp),
-                                color = YellowPrimary
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.SwapHoriz,
-                                        contentDescription = "Trocar Perfil",
-                                        tint = SlateNavy,
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(
-                                        text = if (currentRole == UserRole.DRIVER) "PAIS" else "MOTORISTA",
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = SlateNavy
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.width(6.dp))
-
                             IconButton(
                                 onClick = { FirebaseAuthManager.getInstance().logout() }
                             ) {
@@ -235,8 +204,8 @@ fun MainScreen(
                 containerColor = SlateNavy,
                 tonalElevation = 8.dp
             ) {
-                val navItems = if (currentRole == UserRole.DRIVER) driverNavItems else parentNavItems
-                val currentTab = if (currentRole == UserRole.DRIVER) selectedDriverTab else selectedParentTab
+                val navItems = if (activeRole == UserRole.DRIVER) driverNavItems else parentNavItems
+                val currentTab = if (activeRole == UserRole.DRIVER) selectedDriverTab else selectedParentTab
 
                 navItems.forEach { item ->
                     NavigationBarItem(
@@ -278,7 +247,7 @@ fun MainScreen(
                 .background(MaterialTheme.colorScheme.background)
         ) {
             AnimatedContent(
-                targetState = Pair(currentRole, if (currentRole == UserRole.DRIVER) selectedDriverTab else selectedParentTab),
+                targetState = Pair(activeRole, if (activeRole == UserRole.DRIVER) selectedDriverTab else selectedParentTab),
                 transitionSpec = { fadeIn() togetherWith fadeOut() },
                 label = "ScreenTransition"
             ) { (role, tab) ->
