@@ -62,10 +62,8 @@ import com.example.ui.parent.ParentAnnouncementsScreen
 import com.example.ui.parent.ParentPaymentScreen
 import com.example.ui.parent.ParentTrackingScreen
 import com.example.ui.script.FirebaseArchitectureScreen
-import com.example.ui.theme.OnPrimaryContainerDark
-import com.example.ui.theme.PrimaryContainerLavender
-import com.example.ui.theme.PrimaryPurple
-import com.example.ui.theme.SecondaryMintContainer
+import com.example.ui.theme.SlateNavy
+import com.example.ui.theme.YellowPrimary
 
 data class NavItem(
     val title: String,
@@ -86,14 +84,14 @@ fun MainScreen(
         NavItem("Rota GPS", Icons.Default.DirectionsBus, 0),
         NavItem("Comunicados", Icons.Default.Campaign, 1),
         NavItem("Pix", Icons.Default.QrCode, 2),
-        NavItem("Firebase", Icons.Default.Code, 3)
+        NavItem("Arquitetura", Icons.Default.Code, 3)
     )
 
     val parentNavItems = listOf(
         NavItem("Mapa Vivo", Icons.Default.Map, 0),
         NavItem("Mural", Icons.Default.Notifications, 1),
         NavItem("Pagamento", Icons.Default.Receipt, 2),
-        NavItem("Firebase", Icons.Default.Code, 3)
+        NavItem("Arquitetura", Icons.Default.Code, 3)
     )
 
     Scaffold(
@@ -112,13 +110,13 @@ fun MainScreen(
                                 modifier = Modifier
                                     .size(36.dp)
                                     .clip(CircleShape)
-                                    .background(PrimaryContainerLavender),
+                                    .background(YellowPrimary),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.DirectionsBus,
                                     contentDescription = "Logo",
-                                    tint = OnPrimaryContainerDark,
+                                    tint = SlateNavy,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -133,7 +131,7 @@ fun MainScreen(
                                 Text(
                                     text = if (currentRole == UserRole.DRIVER) "Perfil: Motorista" else "Perfil: Pais",
                                     fontSize = 11.sp,
-                                    color = PrimaryContainerLavender
+                                    color = Color.LightGray
                                 )
                             }
                         }
@@ -145,7 +143,7 @@ fun MainScreen(
                                 viewModel.switchRole(nextRole)
                             },
                             shape = RoundedCornerShape(20.dp),
-                            color = PrimaryContainerLavender
+                            color = YellowPrimary
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -154,7 +152,7 @@ fun MainScreen(
                                 Icon(
                                     imageVector = Icons.Default.SwapHoriz,
                                     contentDescription = "Trocar Perfil",
-                                    tint = OnPrimaryContainerDark,
+                                    tint = SlateNavy,
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
@@ -162,18 +160,18 @@ fun MainScreen(
                                     text = if (currentRole == UserRole.DRIVER) "MUDAR p/ PAIS" else "MUDAR p/ MOTORISTA",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = OnPrimaryContainerDark
+                                    color = SlateNavy
                                 )
                             }
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = PrimaryPurple)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = SlateNavy)
             )
         },
         bottomBar = {
             NavigationBar(
-                containerColor = PrimaryPurple,
+                containerColor = SlateNavy,
                 tonalElevation = 8.dp
             ) {
                 val navItems = if (currentRole == UserRole.DRIVER) driverNavItems else parentNavItems
@@ -193,7 +191,7 @@ fun MainScreen(
                             Icon(
                                 imageVector = item.icon,
                                 contentDescription = item.title,
-                                tint = if (currentTab == item.routeIndex) OnPrimaryContainerDark else PrimaryContainerLavender.copy(alpha = 0.7f)
+                                tint = if (currentTab == item.routeIndex) SlateNavy else Color.LightGray
                             )
                         },
                         label = {
@@ -201,11 +199,11 @@ fun MainScreen(
                                 text = item.title,
                                 fontSize = 11.sp,
                                 fontWeight = if (currentTab == item.routeIndex) FontWeight.Bold else FontWeight.Normal,
-                                color = if (currentTab == item.routeIndex) Color.White else PrimaryContainerLavender.copy(alpha = 0.7f)
+                                color = if (currentTab == item.routeIndex) YellowPrimary else Color.LightGray
                             )
                         },
                         colors = NavigationBarItemDefaults.colors(
-                            indicatorColor = PrimaryContainerLavender
+                            indicatorColor = YellowPrimary
                         )
                     )
                 }
@@ -238,4 +236,3 @@ fun MainScreen(
         }
     }
 }
-

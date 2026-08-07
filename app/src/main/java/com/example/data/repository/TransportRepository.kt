@@ -1,15 +1,12 @@
 package com.example.data.repository
 
 import com.example.data.models.Announcement
-import com.example.data.models.DriverInviteInfo
 import com.example.data.models.LocationLog
-import com.example.data.models.ParentBindingState
 import com.example.data.models.PaymentInfo
 import com.example.data.models.RouteState
 import com.example.data.models.StudentStop
 import com.example.data.models.UserProfile
 import com.example.data.models.UserRole
-
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -78,28 +75,6 @@ class TransportRepository private constructor() {
     // Payment Info
     private val _paymentInfo = MutableStateFlow(PaymentInfo())
     val paymentInfo: StateFlow<PaymentInfo> = _paymentInfo.asStateFlow()
-
-    // Driver Invite & Subscription
-    private val _driverInviteInfo = MutableStateFlow(DriverInviteInfo())
-    val driverInviteInfo: StateFlow<DriverInviteInfo> = _driverInviteInfo.asStateFlow()
-
-    // Parent Van Binding State
-    private val _parentBindingState = MutableStateFlow(ParentBindingState())
-    val parentBindingState: StateFlow<ParentBindingState> = _parentBindingState.asStateFlow()
-
-    fun bindParentToVanCode(code: String): Boolean {
-        val cleanCode = code.trim().uppercase()
-        if (cleanCode == _driverInviteInfo.value.inviteCode || cleanCode == "PERUA-TIO-CARLOS" || cleanCode.startsWith("PERUA-")) {
-            _parentBindingState.value = _parentBindingState.value.copy(
-                isBound = true,
-                boundInviteCode = cleanCode,
-                boundDriverName = driverUser.name
-            )
-            return true
-        }
-        return false
-    }
-
 
     // Pre-configured route waypoints (Simulated school van path around Paulista / Jardins area)
     private val waypoints = listOf(

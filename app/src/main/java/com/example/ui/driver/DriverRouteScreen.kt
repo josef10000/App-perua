@@ -1,6 +1,5 @@
 package com.example.ui.driver
 
-import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
@@ -26,10 +25,8 @@ import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -46,7 +43,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -54,11 +50,6 @@ import com.example.ui.MainViewModel
 import com.example.ui.components.LiveMapView
 import com.example.ui.theme.AccentGreen
 import com.example.ui.theme.AccentRed
-import com.example.ui.theme.OnPrimaryContainerDark
-import com.example.ui.theme.PrimaryContainerLavender
-import com.example.ui.theme.PrimaryPurple
-import com.example.ui.theme.SecondaryMint
-import com.example.ui.theme.SecondaryMintContainer
 import com.example.ui.theme.SlateNavy
 import com.example.ui.theme.YellowPrimary
 import java.util.Locale
@@ -68,13 +59,11 @@ fun DriverRouteScreen(
     viewModel: MainViewModel,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
     val routeState by viewModel.routeState.collectAsState()
     val studentStops by viewModel.studentStops.collectAsState()
-    val inviteInfo by viewModel.driverInviteInfo.collectAsState()
 
     val buttonBgColor by animateColorAsState(
-        targetValue = if (routeState.isActive) AccentRed else SecondaryMint,
+        targetValue = if (routeState.isActive) AccentRed else AccentGreen,
         label = "StartStopBtnColor"
     )
 
@@ -86,14 +75,13 @@ fun DriverRouteScreen(
     ) {
         item {
             Spacer(modifier = Modifier.height(8.dp))
-
-            // Driver Subscription & Control Card
+            // Big intuitive Start/Stop Route Button
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .shadow(8.dp, RoundedCornerShape(24.dp)),
+                    .shadow(10.dp, RoundedCornerShape(24.dp)),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = PrimaryPurple)
+                colors = CardDefaults.cardColors(containerColor = SlateNavy)
             ) {
                 Column(
                     modifier = Modifier.padding(20.dp),
@@ -105,45 +93,35 @@ fun DriverRouteScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Default.VerifiedUser,
-                                    contentDescription = "Subscription",
-                                    tint = SecondaryMintContainer,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = inviteInfo.subscriptionStatus,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = SecondaryMintContainer
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "PAINEL DE CONTROLE DA ROTA",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = YellowPrimary
+                            )
                             Text(
                                 text = viewModel.driverProfile.vanIdentifier,
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
                                 color = Color.White
                             )
                         }
 
                         Surface(
                             shape = RoundedCornerShape(12.dp),
-                            color = if (routeState.isActive) SecondaryMintContainer else Color.White.copy(alpha = 0.15f)
+                            color = if (routeState.isActive) AccentGreen.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.1f)
                         ) {
                             Text(
-                                text = if (routeState.isActive) "GPS EM ROTA" else "GPS AGUARDANDO",
+                                text = if (routeState.isActive) "GPS TRANSMITINDO" else "GPS AGUARDANDO",
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = if (routeState.isActive) SecondaryMint else Color.White
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (routeState.isActive) AccentGreen else Color.LightGray
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(18.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
 
                     // Giant Start/Stop Action Button
                     Button(
@@ -156,20 +134,20 @@ fun DriverRouteScreen(
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(64.dp),
+                            .height(68.dp),
                         shape = RoundedCornerShape(18.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = buttonBgColor)
                     ) {
                         Icon(
                             imageVector = if (routeState.isActive) Icons.Default.Stop else Icons.Default.PlayArrow,
                             contentDescription = if (routeState.isActive) "Finalizar Rota" else "Iniciar Rota",
-                            modifier = Modifier.size(28.dp),
+                            modifier = Modifier.size(32.dp),
                             tint = Color.White
                         )
-                        Spacer(modifier = Modifier.width(10.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            text = if (routeState.isActive) "FINALIZAR ROTA" else "INICIAR ROTA DA PERUA",
-                            fontSize = 18.sp,
+                            text = if (routeState.isActive) "FINALIZAR ROTA" else "INICIAR ROTA",
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.Black,
                             letterSpacing = 0.5.sp,
                             color = Color.White
@@ -179,87 +157,14 @@ fun DriverRouteScreen(
             }
         }
 
-        // WhatsApp Invite Generator Card
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = PrimaryContainerLavender)
-            ) {
-                Column(modifier = Modifier.padding(18.dp)) {
-                    Text(
-                        text = "CONVITE PARA OS PAIS",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = OnPrimaryContainerDark
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Compartilhe seu código com os pais para que acompanhem a perua ao vivo.",
-                        fontSize = 12.sp,
-                        color = OnPrimaryContainerDark.copy(alpha = 0.8f)
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = Color.White,
-                            border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryPurple.copy(alpha = 0.3f))
-                        ) {
-                            Text(
-                                text = inviteInfo.inviteCode,
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Black,
-                                letterSpacing = 1.sp,
-                                color = OnPrimaryContainerDark
-                            )
-                        }
-
-                        Button(
-                            onClick = {
-                                val sendIntent: Intent = Intent().apply {
-                                    action = Intent.ACTION_SEND
-                                    putExtra(
-                                        Intent.EXTRA_TEXT,
-                                        "Olá! Acompanhe a perua escolar do Tio Carlos ao vivo no nosso aplicativo!\n\nUse o código de vinculação: *${inviteInfo.inviteCode}*\n\nBaixe o app: ${inviteInfo.inviteLink}"
-                                    )
-                                    type = "text/plain"
-                                }
-                                val shareIntent = Intent.createChooser(sendIntent, "Enviar Convite para os Pais")
-                                context.startActivity(shareIntent)
-                            },
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryPurple)
-                        ) {
-                            Icon(
-                                Icons.Default.Share,
-                                contentDescription = "Compartilhar",
-                                tint = Color.White,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("WhatsApp", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                        }
-                    }
-                }
-            }
-        }
-
         // Live Map Preview
         item {
             Column {
                 Text(
-                    text = "VISUALIZAÇÃO DA ROTA AO VIVO",
+                    text = "VISUALIZAÇÃO NO MAPA (TEMPO REAL)",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = PrimaryPurple,
+                    color = SlateNavy,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 LiveMapView(
@@ -289,7 +194,7 @@ fun DriverRouteScreen(
                         Icon(
                             Icons.Default.Speed,
                             contentDescription = "Velocidade",
-                            tint = PrimaryPurple,
+                            tint = YellowPrimary,
                             modifier = Modifier.size(28.dp)
                         )
                         Spacer(modifier = Modifier.width(10.dp))
@@ -299,7 +204,7 @@ fun DriverRouteScreen(
                                 text = String.format(Locale.getDefault(), "%.0f km/h", routeState.currentSpeedKmH),
                                 fontWeight = FontWeight.ExtraBold,
                                 fontSize = 16.sp,
-                                color = OnPrimaryContainerDark
+                                color = SlateNavy
                             )
                         }
                     }
@@ -318,17 +223,17 @@ fun DriverRouteScreen(
                         Icon(
                             Icons.Default.LocationOn,
                             contentDescription = "Posição",
-                            tint = SecondaryMint,
+                            tint = AccentGreen,
                             modifier = Modifier.size(28.dp)
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
-                            Text("GPS Lat/Lng", fontSize = 11.sp, color = Color.Gray)
+                            Text("Coordenadas", fontSize = 11.sp, color = Color.Gray)
                             Text(
                                 text = String.format(Locale.getDefault(), "%.3f, %.3f", routeState.currentLocation.latitude, routeState.currentLocation.longitude),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 12.sp,
-                                color = OnPrimaryContainerDark
+                                color = SlateNavy
                             )
                         }
                     }
@@ -342,7 +247,7 @@ fun DriverRouteScreen(
                 text = "PONTOS DE EMBARQUE / DESEMBARQUE",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
-                color = PrimaryPurple,
+                color = SlateNavy,
                 modifier = Modifier.padding(top = 8.dp)
             )
         }
@@ -352,9 +257,9 @@ fun DriverRouteScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = if (stop.isCurrentTarget) PrimaryContainerLavender else Color.White
+                    containerColor = if (stop.isCurrentTarget) Color(0xFFFEF3C7) else Color.White
                 ),
-                border = if (stop.isCurrentTarget) androidx.compose.foundation.BorderStroke(1.5.dp, PrimaryPurple) else null
+                border = if (stop.isCurrentTarget) androidx.compose.foundation.BorderStroke(1.5.dp, YellowPrimary) else null
             ) {
                 Row(
                     modifier = Modifier
@@ -373,8 +278,8 @@ fun DriverRouteScreen(
                                 .clip(CircleShape)
                                 .background(
                                     when {
-                                        stop.isDone -> SecondaryMint
-                                        stop.isCurrentTarget -> PrimaryPurple
+                                        stop.isDone -> AccentGreen
+                                        stop.isCurrentTarget -> YellowPrimary
                                         else -> Color(0xFFE2E8F0)
                                     }
                                 ),
@@ -395,7 +300,7 @@ fun DriverRouteScreen(
                                 text = stop.studentName,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp,
-                                color = OnPrimaryContainerDark
+                                color = SlateNavy
                             )
                             Text(
                                 text = stop.address,
@@ -408,14 +313,14 @@ fun DriverRouteScreen(
                     if (stop.isCurrentTarget) {
                         Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = PrimaryPurple
+                            color = YellowPrimary
                         ) {
                             Text(
                                 text = "PRÓXIMA PARADA",
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = SlateNavy
                             )
                         }
                     }
@@ -428,4 +333,3 @@ fun DriverRouteScreen(
         }
     }
 }
-

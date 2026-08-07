@@ -69,20 +69,3 @@ data class StudentStop(
     val isDone: Boolean = false,
     val isCurrentTarget: Boolean = false
 )
-
-data class DriverInviteInfo(
-    val inviteCode: String = "PERUA-TIO-CARLOS",
-    val inviteLink: String = "https://rotaescolar.app/invite/PERUA-TIO-CARLOS",
-    val subscriptionStatus: String = "ATIVO (Plano Anual Motorista Pro)",
-    val activeParentsCount: Int = 18
-)
-
-
-data class ParentBindingState(
-    val isBound: Boolean = true,
-    val boundInviteCode: String = "PERUA-TIO-CARLOS",
-    val boundDriverName: String = "Carlos Eduardo (Tio Carlos)",
-    val studentName: String = "Lucas Silva",
-    val studentGrade: String = "3º Ano B - Colégio Anchieta"
-)
-

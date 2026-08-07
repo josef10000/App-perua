@@ -3,13 +3,10 @@ package com.example.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.models.Announcement
-import com.example.data.models.DriverInviteInfo
-import com.example.data.models.ParentBindingState
 import com.example.data.models.PaymentInfo
 import com.example.data.models.RouteState
 import com.example.data.models.StudentStop
 import com.example.data.models.UserRole
-
 import com.example.data.repository.TransportRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -49,25 +46,8 @@ class MainViewModel : ViewModel() {
         initialValue = emptyList()
     )
 
-    val driverInviteInfo = repository.driverInviteInfo.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = com.example.data.models.DriverInviteInfo()
-    )
-
-    val parentBindingState = repository.parentBindingState.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = com.example.data.models.ParentBindingState()
-    )
-
     val driverProfile = repository.driverUser
     val parentProfile = repository.parentUser
-
-    fun bindParentToVanCode(code: String): Boolean {
-        return repository.bindParentToVanCode(code)
-    }
-
 
     fun switchRole(role: UserRole) {
         repository.switchRole(role)
