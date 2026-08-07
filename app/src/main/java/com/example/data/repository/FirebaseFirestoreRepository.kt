@@ -56,7 +56,7 @@ class FirebaseFirestoreRepository private constructor() {
 
             val listener = query.addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    close(error)
+                    trySend(emptyList())
                     return@addSnapshotListener
                 }
                 if (snapshot != null) {

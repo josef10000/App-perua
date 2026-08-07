@@ -83,12 +83,20 @@ class TransportRepository private constructor() {
     private var currentWaypointIndex = 0
 
     init {
-        scope.launch {
-            FirebaseFirestoreRepository.getInstance().observeAnnouncements().collect { list ->
-                if (list.isNotEmpty()) {
-                    _announcements.value = list
+        try {
+            scope.launch {
+                try {
+                    FirebaseFirestoreRepository.getInstance().observeAnnouncements().collect { list ->
+                        if (list.isNotEmpty()) {
+                            _announcements.value = list
+                        }
+                    }
+                } catch (_: Exception) {
+                    // Firestore não disponível - app funciona offline
                 }
             }
+        } catch (_: Exception) {
+            // Proteção contra qualquer crash na inicialização
         }
     }
 
