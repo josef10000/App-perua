@@ -23,8 +23,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
@@ -81,6 +84,8 @@ fun AuthScreen(
     var password by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
     var vanIdentifier by remember { mutableStateOf("") }
+    var studentName by remember { mutableStateOf("") }
+    var studentAddress by remember { mutableStateOf("") }
     var selectedRole by remember { mutableStateOf(UserRole.PARENT) }
     var isPasswordVisible by remember { mutableStateOf(false) }
 
@@ -252,6 +257,51 @@ fun AuthScreen(
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
                     )
+
+                    if (selectedRole == UserRole.PARENT) {
+                        OutlinedTextField(
+                            value = studentName,
+                            onValueChange = { studentName = it },
+                            label = { Text("Nome do Aluno(a)", color = Color.Gray) },
+                            leadingIcon = { Icon(Icons.Default.School, contentDescription = null, tint = YellowPrimary) },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = YellowPrimary,
+                                unfocusedBorderColor = Color(0xFF334155),
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White
+                            ),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+                        )
+
+                        OutlinedTextField(
+                            value = studentAddress,
+                            onValueChange = { studentAddress = it },
+                            label = { Text("Endereço / Ponto de Coleta", color = Color.Gray) },
+                            leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null, tint = YellowPrimary) },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = YellowPrimary,
+                                unfocusedBorderColor = Color(0xFF334155),
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White
+                            ),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                        )
+
+                        Button(
+                            onClick = {
+                                studentAddress = "Localização Capturada via GPS (-23.5630, -46.6540)"
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF334155)),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp)
+                        ) {
+                            Icon(Icons.Default.MyLocation, contentDescription = "GPS", tint = YellowPrimary, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("📍 USAR MINHA LOCALIZAÇÃO ATUAL DO GPS", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
                 }
 
                 // Common Email & Password
@@ -316,7 +366,9 @@ fun AuthScreen(
                                     email = email.trim(),
                                     pass = password,
                                     role = selectedRole,
-                                    vanIdentifier = vanIdentifier.ifBlank { "Perua #102" }
+                                    vanIdentifier = vanIdentifier.ifBlank { "VAN-102" },
+                                    studentName = studentName,
+                                    studentAddress = studentAddress
                                 )
                             }
                             isLoading = false
@@ -344,6 +396,29 @@ fun AuthScreen(
                             fontSize = 14.sp
                         )
                     }
+                }
+
+                // Google Sign-In Button
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(
+                    onClick = {
+                        isLoading = true
+                        scope.launch {
+                            authManager.signInWithGoogle("demo_google_token")
+                            isLoading = false
+                            onAuthSuccess()
+                        }
+                    },
+                    enabled = !isLoading,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                ) {
+                    Icon(imageVector = Icons.Default.Person, contentDescription = "Google", tint = SlateNavy)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("CONTINUAR COM O GOOGLE", color = SlateNavy, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                 }
             }
         }

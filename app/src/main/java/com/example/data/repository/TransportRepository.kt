@@ -222,6 +222,9 @@ class TransportRepository private constructor() {
                     currentLocation = log
                 )
 
+                // Verificação de proximidade GPS (Geofencing de 100m)
+                checkGeofenceProximity(interpLat, interpLng)
+
                 // Envio das coordenadas para o Firebase Realtime Database
                 FirebaseGpsRepository.getInstance().updateDriverLocation(
                     driverId = driverUser.id,
@@ -234,6 +237,40 @@ class TransportRepository private constructor() {
                         driverName = driverUser.name,
                         vanIdentifier = driverUser.vanIdentifier
                     )
+                )
+            }
+        }
+    }
+
+    private fun calculateDistanceMeters(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+        val r = 6371000.0
+        val dLat = Math.toRadians(lat2 - lat1)
+        val dLon = Math.toRadians(lon2 - lon1)
+        val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2)
+        val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+        return r * c
+    }
+
+    private fun checkGeofenceProximity(lat: Double, lng: Double) {
+        val stops = _studentStops.value
+        val currentTarget = stops.firstOrNull { it.isCurrentTarget && !it.isDone }
+        if (currentTarget != null) {
+            val dist = calculateDistanceMeters(lat, lng, currentTarget.latitude, currentTarget.longitude)
+            if (dist <= 100.0) {
+                val currentIdx = stops.indexOf(currentTarget)
+                val nextIdx = currentIdx + 1
+                _studentStops.value = stops.mapIndexed { idx, stop ->
+                    when {
+                        idx <= currentIdx -> stop.copy(isDone = true, isCurrentTarget = false)
+                        idx == nextIdx -> stop.copy(isDone = false, isCurrentTarget = true)
+                        else -> stop.copy(isDone = false, isCurrentTarget = false)
+                    }
+                }
+                postAnnouncement(
+                    message = "📍 O aluno ${currentTarget.studentName} foi recolhido/entregue com sucesso no ponto!",
+                    isUrgent = false
                 )
             }
         }

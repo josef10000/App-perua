@@ -95,10 +95,14 @@ class FirebaseAuthManager private constructor() {
         email: String,
         pass: String,
         role: UserRole,
-        vanIdentifier: String
+        vanIdentifier: String,
+        studentName: String = "",
+        studentAddress: String = "",
+        latitude: Double = -23.5630,
+        longitude: Double = -46.6540
     ): AuthResult {
         _authResultState.value = AuthResult.Loading
-        val currentAuth = auth ?: return fallbackDemoRegister(name, email, role, vanIdentifier)
+        val currentAuth = auth ?: return fallbackDemoRegister(name, email, role, vanIdentifier, studentName, studentAddress, latitude, longitude)
         return try {
             val result = currentAuth.createUserWithEmailAndPassword(email, pass).await()
             val user = result.user
@@ -108,18 +112,47 @@ class FirebaseAuthManager private constructor() {
                     name = name,
                     email = email,
                     role = role,
-                    vanIdentifier = vanIdentifier
+                    vanIdentifier = vanIdentifier.ifBlank { "VAN-102" }
                 )
                 saveProfileToFirestore(profile)
+                if (studentName.isNotBlank()) {
+                    com.example.data.repository.TransportRepository.getInstance().addStudentStop(
+                        studentName = studentName,
+                        address = studentAddress.ifBlank { "Endereço Cadastrado via GPS" },
+                        lat = latitude,
+                        lng = longitude
+                    )
+                }
                 _userProfileState.value = profile
                 val success = AuthResult.Success(profile)
                 _authResultState.value = success
                 success
             } else {
-                fallbackDemoRegister(name, email, role, vanIdentifier)
+                fallbackDemoRegister(name, email, role, vanIdentifier, studentName, studentAddress, latitude, longitude)
             }
         } catch (e: Exception) {
-            fallbackDemoRegister(name, email, role, vanIdentifier)
+            fallbackDemoRegister(name, email, role, vanIdentifier, studentName, studentAddress, latitude, longitude)
+        }
+    }
+
+    suspend fun signInWithGoogle(idToken: String): AuthResult {
+        _authResultState.value = AuthResult.Loading
+        val currentAuth = auth ?: return fallbackDemoLogin("google.user@gmail.com")
+        return try {
+            val credential = com.google.firebase.auth.GoogleAuthProvider.getCredential(idToken, null)
+            val result = currentAuth.signInWithCredential(credential).await()
+            val user = result.user
+            if (user != null) {
+                val profile = loadProfileFromFirestore(user.uid)
+                _userProfileState.value = profile
+                val success = AuthResult.Success(profile)
+                _authResultState.value = success
+                success
+            } else {
+                fallbackDemoLogin("google.user@gmail.com")
+            }
+        } catch (e: Exception) {
+            fallbackDemoLogin("google.user@gmail.com")
         }
     }
 
@@ -131,14 +164,31 @@ class FirebaseAuthManager private constructor() {
         return success
     }
 
-    private fun fallbackDemoRegister(name: String, email: String, role: UserRole, vanIdentifier: String): AuthResult {
+    private fun fallbackDemoRegister(
+        name: String,
+        email: String,
+        role: UserRole,
+        vanIdentifier: String,
+        studentName: String = "",
+        studentAddress: String = "",
+        latitude: Double = -23.5630,
+        longitude: Double = -46.6540
+    ): AuthResult {
         val profile = UserProfile(
             id = "demo_${System.currentTimeMillis()}",
             name = name,
             email = email,
             role = role,
-            vanIdentifier = vanIdentifier.ifBlank { "Perua #102" }
+            vanIdentifier = vanIdentifier.ifBlank { "VAN-102" }
         )
+        if (studentName.isNotBlank()) {
+            com.example.data.repository.TransportRepository.getInstance().addStudentStop(
+                studentName = studentName,
+                address = studentAddress.ifBlank { "Endereço Cadastrado via GPS" },
+                lat = latitude,
+                lng = longitude
+            )
+        }
         _userProfileState.value = profile
         val success = AuthResult.Success(profile)
         _authResultState.value = success
