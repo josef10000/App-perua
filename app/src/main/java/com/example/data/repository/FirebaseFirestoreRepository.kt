@@ -76,8 +76,8 @@ class FirebaseFirestoreRepository private constructor() {
                 "id" to stop.id,
                 "studentName" to stop.studentName,
                 "address" to stop.address,
-                "lat" to stop.lat,
-                "lng" to stop.lng,
+                "lat" to stop.latitude,
+                "lng" to stop.longitude,
                 "isDone" to stop.isDone,
                 "isCurrentTarget" to stop.isCurrentTarget
             )
