@@ -88,15 +88,20 @@ fun AuthScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(SlateNavy)
-            .padding(24.dp),
+            .background(
+                androidx.compose.ui.graphics.Brush.verticalGradient(
+                    colors = listOf(SlateNavy, Color(0xFF090D16))
+                )
+            )
+            .padding(20.dp),
         contentAlignment = Alignment.Center
     ) {
         Card(
             colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
-            shape = RoundedCornerShape(20.dp),
+            shape = RoundedCornerShape(24.dp),
             modifier = Modifier
                 .fillMaxWidth()
+                .androidx.compose.ui.draw.shadow(16.dp, RoundedCornerShape(24.dp))
                 .verticalScroll(rememberScrollState())
         ) {
             Column(
@@ -105,34 +110,39 @@ fun AuthScreen(
                     .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Header Logo
+                // Header Logo with Glow Ring
                 Box(
                     modifier = Modifier
-                        .size(64.dp)
+                        .size(72.dp)
                         .clip(CircleShape)
-                        .background(YellowPrimary),
+                        .background(
+                            androidx.compose.ui.graphics.Brush.linearGradient(
+                                colors = listOf(YellowPrimary, Color(0xFFFBBF24))
+                            )
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.DirectionsBus,
                         contentDescription = "Logo",
                         tint = SlateNavy,
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(40.dp)
                     )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 Text(
                     text = "Rota Escolar",
                     color = Color.White,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 0.5.sp
                 )
 
                 Text(
-                    text = "Acesso Seguro motoristas e pais via Firebase",
-                    color = Color.Gray,
+                    text = "Transporte escolar seguro em tempo real",
+                    color = Color.LightGray,
                     fontSize = 12.sp,
                     modifier = Modifier.padding(bottom = 20.dp)
                 )
