@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.DirectionsBus
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
@@ -31,6 +32,7 @@ import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -54,7 +56,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.data.auth.FirebaseAuthManager
 import com.example.data.models.UserRole
+import com.example.ui.auth.AuthScreen
 import com.example.ui.driver.DriverAnnouncementsScreen
 import com.example.ui.driver.DriverPixSettingsScreen
 import com.example.ui.driver.DriverRouteScreen
@@ -76,6 +80,16 @@ data class NavItem(
 fun MainScreen(
     viewModel: MainViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
+    val authManager = remember { FirebaseAuthManager.getInstance() }
+    val currentUser by authManager.currentUserState.collectAsState()
+    val userProfile by authManager.userProfileState.collectAsState()
+
+    // Se o usuário não está autenticado e não há perfil local, exibe a AuthScreen
+    if (currentUser == null && userProfile == null) {
+        AuthScreen(onAuthSuccess = { })
+        return
+    }
+
     val currentRole by viewModel.currentRole.collectAsState()
     var selectedDriverTab by remember { mutableIntStateOf(0) }
     var selectedParentTab by remember { mutableIntStateOf(0) }
@@ -136,31 +150,45 @@ fun MainScreen(
                             }
                         }
 
-                        // Role Switcher Button
-                        Surface(
-                            onClick = {
-                                val nextRole = if (currentRole == UserRole.DRIVER) UserRole.PARENT else UserRole.DRIVER
-                                viewModel.switchRole(nextRole)
-                            },
-                            shape = RoundedCornerShape(20.dp),
-                            color = YellowPrimary
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            // Role Switcher Button
+                            Surface(
+                                onClick = {
+                                    val nextRole = if (currentRole == UserRole.DRIVER) UserRole.PARENT else UserRole.DRIVER
+                                    viewModel.switchRole(nextRole)
+                                },
+                                shape = RoundedCornerShape(20.dp),
+                                color = YellowPrimary
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.SwapHoriz,
+                                        contentDescription = "Trocar Perfil",
+                                        tint = SlateNavy,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = if (currentRole == UserRole.DRIVER) "PAIS" else "MOTORISTA",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = SlateNavy
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.width(6.dp))
+
+                            IconButton(
+                                onClick = { FirebaseAuthManager.getInstance().logout() }
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.SwapHoriz,
-                                    contentDescription = "Trocar Perfil",
-                                    tint = SlateNavy,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = if (currentRole == UserRole.DRIVER) "MUDAR p/ PAIS" else "MUDAR p/ MOTORISTA",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = SlateNavy
+                                    imageVector = Icons.Default.ExitToApp,
+                                    contentDescription = "Sair",
+                                    tint = Color.White
                                 )
                             }
                         }
