@@ -212,6 +212,20 @@ class TransportRepository private constructor() {
                     headingDegrees = heading,
                     currentLocation = log
                 )
+
+                // Envio das coordenadas para o Firebase Realtime Database
+                FirebaseGpsRepository.getInstance().updateDriverLocation(
+                    driverId = driverUser.id,
+                    location = RealtimeLocationData(
+                        latitude = interpLat,
+                        longitude = interpLng,
+                        speedKmh = simulatedSpeed,
+                        bearing = heading,
+                        status = "ACTIVE",
+                        driverName = driverUser.name,
+                        vanIdentifier = driverUser.vanIdentifier
+                    )
+                )
             }
         }
     }
