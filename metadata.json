@@ -1,0 +1,6 @@
+{
+  "name": "Rota Escolar",
+  "description": "Aplicativo de rastreamento em tempo real para transporte escolar (motoristas e pais).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
