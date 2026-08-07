@@ -46,6 +46,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -83,10 +84,44 @@ fun MainScreen(
     val authManager = remember { FirebaseAuthManager.getInstance() }
     val currentUser by authManager.currentUserState.collectAsState()
     val userProfile by authManager.userProfileState.collectAsState()
+    val isAuthReady by authManager.isAuthReady.collectAsState()
+    var isAuthenticated by remember { mutableStateOf(false) }
 
-    // Se o usuário não está autenticado no Firebase Auth ou não tem perfil carregado, exibe obrigatoriamente a AuthScreen (Tela de Login)
-    if (currentUser == null || userProfile == null) {
-        AuthScreen(onAuthSuccess = { })
+    // Atualiza isAuthenticated quando o perfil do usuário muda
+    if (userProfile != null) {
+        isAuthenticated = true
+    }
+    if (currentUser == null && userProfile == null && isAuthReady) {
+        isAuthenticated = false
+    }
+
+    // Splash de carregamento enquanto o Firebase inicializa
+    if (!isAuthReady) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(SlateNavy),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    imageVector = Icons.Default.DirectionsBus,
+                    contentDescription = "Logo",
+                    tint = YellowPrimary,
+                    modifier = Modifier.size(64.dp)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Rota Escolar", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(8.dp))
+                androidx.compose.material3.CircularProgressIndicator(color = YellowPrimary)
+            }
+        }
+        return
+    }
+
+    // Se não autenticado, exibir a tela de Login/Cadastro
+    if (!isAuthenticated) {
+        AuthScreen(onAuthSuccess = { isAuthenticated = true })
         return
     }
 

@@ -19,35 +19,26 @@ sealed class AuthResult {
 
 class FirebaseAuthManager private constructor() {
 
-    private val auth: FirebaseAuth? by lazy {
-        try {
-            FirebaseAuth.getInstance()
-        } catch (e: Exception) {
-            null
-        }
+    private val auth: FirebaseAuth? = try {
+        FirebaseAuth.getInstance()
+    } catch (e: Exception) {
+        null
     }
 
-    private val firestore: FirebaseFirestore? by lazy {
-        try {
-            FirebaseFirestore.getInstance()
-        } catch (e: Exception) {
-            null
-        }
+    private val firestore: FirebaseFirestore? = try {
+        FirebaseFirestore.getInstance()
+    } catch (e: Exception) {
+        null
     }
 
     private val _currentUserState = MutableStateFlow<FirebaseUser?>(null)
     val currentUserState: StateFlow<FirebaseUser?> = _currentUserState.asStateFlow()
 
-    private val defaultDemoProfile = UserProfile(
-        id = "demo_user_102",
-        name = "Carlos Eduardo (Modo Demo)",
-        email = "demo.rotaescolar@escola.com",
-        role = UserRole.DRIVER,
-        vanIdentifier = "Perua #102 - Mercedes Sprinter"
-    )
-
     private val _userProfileState = MutableStateFlow<UserProfile?>(null)
     val userProfileState: StateFlow<UserProfile?> = _userProfileState.asStateFlow()
+
+    private val _isAuthReady = MutableStateFlow(false)
+    val isAuthReady: StateFlow<Boolean> = _isAuthReady.asStateFlow()
 
     private val _authResultState = MutableStateFlow<AuthResult>(AuthResult.Idle)
     val authResultState: StateFlow<AuthResult> = _authResultState.asStateFlow()
@@ -65,12 +56,13 @@ class FirebaseAuthManager private constructor() {
                     } else {
                         _userProfileState.value = null
                     }
+                    _isAuthReady.value = true
                 }
             } else {
-                _userProfileState.value = null
+                _isAuthReady.value = true
             }
         } catch (e: Exception) {
-            _userProfileState.value = null
+            _isAuthReady.value = true
         }
     }
 
@@ -122,12 +114,14 @@ class FirebaseAuthManager private constructor() {
                 )
                 saveProfileToFirestore(profile)
                 if (studentName.isNotBlank()) {
-                    com.example.data.repository.TransportRepository.getInstance().addStudentStop(
-                        studentName = studentName,
-                        address = studentAddress.ifBlank { "Endereço Cadastrado via GPS" },
-                        lat = latitude,
-                        lng = longitude
-                    )
+                    try {
+                        com.example.data.repository.TransportRepository.getInstance().addStudentStop(
+                            studentName = studentName,
+                            address = studentAddress.ifBlank { "Endereço Cadastrado via GPS" },
+                            lat = latitude,
+                            lng = longitude
+                        )
+                    } catch (_: Exception) {}
                 }
                 _userProfileState.value = profile
                 val success = AuthResult.Success(profile)
@@ -163,7 +157,13 @@ class FirebaseAuthManager private constructor() {
     }
 
     private fun fallbackDemoLogin(email: String): AuthResult {
-        val profile = defaultDemoProfile.copy(email = email)
+        val profile = UserProfile(
+            id = "demo_user_102",
+            name = "Usuário Demo",
+            email = email,
+            role = UserRole.DRIVER,
+            vanIdentifier = "VAN-102"
+        )
         _userProfileState.value = profile
         val success = AuthResult.Success(profile)
         _authResultState.value = success
@@ -188,12 +188,14 @@ class FirebaseAuthManager private constructor() {
             vanIdentifier = vanIdentifier.ifBlank { "VAN-102" }
         )
         if (studentName.isNotBlank()) {
-            com.example.data.repository.TransportRepository.getInstance().addStudentStop(
-                studentName = studentName,
-                address = studentAddress.ifBlank { "Endereço Cadastrado via GPS" },
-                lat = latitude,
-                lng = longitude
-            )
+            try {
+                com.example.data.repository.TransportRepository.getInstance().addStudentStop(
+                    studentName = studentName,
+                    address = studentAddress.ifBlank { "Endereço Cadastrado via GPS" },
+                    lat = latitude,
+                    lng = longitude
+                )
+            } catch (_: Exception) {}
         }
         _userProfileState.value = profile
         val success = AuthResult.Success(profile)
@@ -218,7 +220,7 @@ class FirebaseAuthManager private constructor() {
     }
 
     private suspend fun loadProfileFromFirestore(uid: String): UserProfile {
-        val store = firestore ?: return defaultDemoProfile
+        val store = firestore ?: return UserProfile(id = uid, name = "Usuário", email = "", role = UserRole.PARENT, vanIdentifier = "VAN-102")
         return try {
             val snapshot = store.collection("users").document(uid).get().await()
             if (snapshot.exists()) {
@@ -226,13 +228,13 @@ class FirebaseAuthManager private constructor() {
                 val email = snapshot.getString("email") ?: ""
                 val roleStr = snapshot.getString("role") ?: UserRole.PARENT.name
                 val role = try { UserRole.valueOf(roleStr) } catch (e: Exception) { UserRole.PARENT }
-                val vanIdentifier = snapshot.getString("vanIdentifier") ?: "Perua #102"
+                val vanIdentifier = snapshot.getString("vanIdentifier") ?: "VAN-102"
                 UserProfile(id = uid, name = name, email = email, role = role, vanIdentifier = vanIdentifier)
             } else {
-                defaultDemoProfile
+                UserProfile(id = uid, name = "Usuário", email = "", role = UserRole.PARENT, vanIdentifier = "VAN-102")
             }
         } catch (e: Exception) {
-            defaultDemoProfile
+            UserProfile(id = uid, name = "Usuário", email = "", role = UserRole.PARENT, vanIdentifier = "VAN-102")
         }
     }
 
@@ -246,7 +248,7 @@ class FirebaseAuthManager private constructor() {
                         val email = snapshot.getString("email") ?: ""
                         val roleStr = snapshot.getString("role") ?: UserRole.PARENT.name
                         val role = try { UserRole.valueOf(roleStr) } catch (e: Exception) { UserRole.PARENT }
-                        val vanIdentifier = snapshot.getString("vanIdentifier") ?: "Perua #102"
+                        val vanIdentifier = snapshot.getString("vanIdentifier") ?: "VAN-102"
                         _userProfileState.value = UserProfile(id = uid, name = name, email = email, role = role, vanIdentifier = vanIdentifier)
                     }
                 }
@@ -262,7 +264,7 @@ class FirebaseAuthManager private constructor() {
             // Safe ignore
         }
         _currentUserState.value = null
-        _userProfileState.value = defaultDemoProfile
+        _userProfileState.value = null
         _authResultState.value = AuthResult.Idle
     }
 
