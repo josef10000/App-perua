@@ -240,6 +240,16 @@ class TransportRepository private constructor() {
             isUrgent = isUrgent
         )
         _announcements.value = listOf(newAnnouncement) + _announcements.value
+
+        // Gravação em tempo real no Cloud Firestore
+        scope.launch {
+            FirebaseFirestoreRepository.getInstance().postAnnouncement(
+                driverId = driverUser.id,
+                driverName = driverUser.name,
+                message = message,
+                isUrgent = isUrgent
+            )
+        }
     }
 
     fun updatePaymentInfo(pixKey: String, pixKeyType: String, monthlyFee: Double) {
