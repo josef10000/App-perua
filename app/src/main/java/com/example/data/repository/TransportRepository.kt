@@ -50,54 +50,63 @@ class TransportRepository private constructor() {
     val routeState: StateFlow<RouteState> = _routeState.asStateFlow()
 
     // Announcements
-    private val _announcements = MutableStateFlow<List<Announcement>>(
-        listOf(
-            Announcement(
-                id = "ann_1",
-                driverId = "driver_102",
-                driverName = "Tio Carlos",
-                message = "Bom dia pais! Rota da manhã iniciada com sucesso. Previsão de chegada na escola às 07:35.",
-                timestamp = System.currentTimeMillis() - 3600000, // 1 hour ago
-                isUrgent = false
-            ),
-            Announcement(
-                id = "ann_2",
-                driverId = "driver_102",
-                driverName = "Tio Carlos",
-                message = "Lembrete: Amanhã haverá reunião de pais no Colégio Anchieta às 18h.",
-                timestamp = System.currentTimeMillis() - 86400000, // 1 day ago
-                isUrgent = false
-            )
-        )
-    )
+    private val _announcements = MutableStateFlow<List<Announcement>>(emptyList())
     val announcements: StateFlow<List<Announcement>> = _announcements.asStateFlow()
 
     // Payment Info
-    private val _paymentInfo = MutableStateFlow(PaymentInfo())
+    private val _paymentInfo = MutableStateFlow(
+        PaymentInfo(
+            id = "pay_001",
+            driverId = "driver_102",
+            driverName = "Motorista",
+            pixKey = "",
+            pixKeyType = "Chave Pix",
+            monthlyFee = 0.0,
+            studentName = "Sem pagamentos cadastrados"
+        )
+    )
     val paymentInfo: StateFlow<PaymentInfo> = _paymentInfo.asStateFlow()
 
-    // Pre-configured route waypoints (Simulated school van path around Paulista / Jardins area)
+    // Pre-configured route waypoints for fallback positioning
     private val waypoints = listOf(
-        Pair(-23.5617, -46.6560), // Stop 1: Garagem Tio Carlos
-        Pair(-23.5630, -46.6540), // Stop 2: Res. Lucas (Alameda Santos)
-        Pair(-23.5652, -46.6518), // Stop 3: Res. Sophia & Pedro
-        Pair(-23.5680, -46.6490), // Stop 4: Res. Enzo
-        Pair(-23.5710, -46.6450), // Stop 5: Colégio Anchieta
-        Pair(-23.5735, -46.6420)  // Stop 6: Escola Múltipla
+        Pair(-23.5617, -46.6560),
+        Pair(-23.5630, -46.6540),
+        Pair(-23.5652, -46.6518),
+        Pair(-23.5680, -46.6490),
+        Pair(-23.5710, -46.6450)
     )
 
     // Student Stops
-    private val _studentStops = MutableStateFlow<List<StudentStop>>(
-        listOf(
-            StudentStop("s1", "Lucas Silva", "Alameda Santos, 1200", -23.5630, -46.6540, isDone = false, isCurrentTarget = true),
-            StudentStop("s2", "Sophia & Pedro", "Rua Augusta, 2400", -23.5652, -46.6518, isDone = false, isCurrentTarget = false),
-            StudentStop("s3", "Enzo Gabriel", "Alameda Jaú, 850", -23.5680, -46.6490, isDone = false, isCurrentTarget = false),
-            StudentStop("s4", "Colégio Anchieta (Escola)", "Rua Treze de Maio, 500", -23.5710, -46.6450, isDone = false, isCurrentTarget = false)
-        )
-    )
+    private val _studentStops = MutableStateFlow<List<StudentStop>>(emptyList())
     val studentStops: StateFlow<List<StudentStop>> = _studentStops.asStateFlow()
 
     private var currentWaypointIndex = 0
+
+    init {
+        scope.launch {
+            FirebaseFirestoreRepository.getInstance().observeAnnouncements().collect { list ->
+                if (list.isNotEmpty()) {
+                    _announcements.value = list
+                }
+            }
+        }
+    }
+
+    fun addStudentStop(studentName: String, address: String, lat: Double = -23.5630, lng: Double = -46.6540) {
+        val newStop = StudentStop(
+            id = "s_${System.currentTimeMillis()}",
+            studentName = studentName,
+            address = address,
+            latitude = lat,
+            longitude = lng,
+            isDone = false,
+            isCurrentTarget = _studentStops.value.isEmpty()
+        )
+        _studentStops.value = _studentStops.value + newStop
+        scope.launch {
+            FirebaseFirestoreRepository.getInstance().updateStudentStop(newStop)
+        }
+    }
 
     fun switchRole(role: UserRole) {
         _currentRole.value = role

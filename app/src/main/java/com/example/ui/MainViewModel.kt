@@ -72,4 +72,8 @@ class MainViewModel : ViewModel() {
     fun updateManualCoordinates(lat: Double, lng: Double) {
         repository.updateLocationManually(lat, lng)
     }
+
+    fun addStudentStop(name: String, address: String) {
+        repository.addStudentStop(name, address)
+    }
 }

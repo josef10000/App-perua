@@ -49,8 +49,43 @@ fun ParentAnnouncementsScreen(
             )
         }
 
-        items(announcements) { announcement ->
-            AnnouncementCard(announcement = announcement)
+        if (announcements.isEmpty()) {
+            item {
+                androidx.compose.material3.Card(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                    colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color.White),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp).fillMaxWidth(),
+                        horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+                    ) {
+                        androidx.compose.material3.Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Default.Notifications,
+                            contentDescription = null,
+                            modifier = Modifier.padding(bottom = 8.dp),
+                            tint = androidx.compose.ui.graphics.Color.Gray
+                        )
+                        Text(
+                            text = "Nenhum comunicado publicado ainda",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp,
+                            color = SlateNavy
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Assim que o motorista enviar avisos ou recados sobre a rota, eles aparecerão aqui.",
+                            fontSize = 12.sp,
+                            color = androidx.compose.ui.graphics.Color.Gray,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                    }
+                }
+            }
+        } else {
+            items(announcements) { announcement ->
+                AnnouncementCard(announcement = announcement)
+            }
         }
 
         item {

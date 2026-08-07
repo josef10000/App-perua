@@ -21,25 +21,33 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,6 +55,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.MainViewModel
@@ -69,6 +78,55 @@ fun DriverRouteScreen(
         targetValue = if (routeState.isActive) AccentRed else AccentGreen,
         label = "StartStopBtnColor"
     )
+
+    var showAddStudentDialog by remember { mutableStateOf(false) }
+    var newStudentName by remember { mutableStateOf("") }
+    var newStudentAddress by remember { mutableStateOf("") }
+
+    if (showAddStudentDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddStudentDialog = false },
+            title = { Text("Cadastrar Novo Aluno / Parada", fontWeight = FontWeight.Bold, color = SlateNavy) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedTextField(
+                        value = newStudentName,
+                        onValueChange = { newStudentName = it },
+                        label = { Text("Nome do Aluno") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = newStudentAddress,
+                        onValueChange = { newStudentAddress = it },
+                        label = { Text("Endereço / Escola") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (newStudentName.isNotBlank() && newStudentAddress.isNotBlank()) {
+                            viewModel.addStudentStop(newStudentName, newStudentAddress)
+                            newStudentName = ""
+                            newStudentAddress = ""
+                            showAddStudentDialog = false
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = YellowPrimary)
+                ) {
+                    Text("Salvar", color = SlateNavy, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddStudentDialog = false }) {
+                    Text("Cancelar", color = Color.Gray)
+                }
+            }
+        )
+    }
 
     LazyColumn(
         modifier = modifier
@@ -270,15 +328,61 @@ fun DriverRouteScreen(
             }
         }
 
-        // Student Stops Checklist
+        // Student Stops Checklist Header
         item {
-            Text(
-                text = "PONTOS DE EMBARQUE / DESEMBARQUE",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = SlateNavy,
-                modifier = Modifier.padding(top = 8.dp)
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "PONTOS DE EMBARQUE / DESEMBARQUE",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = SlateNavy
+                )
+                TextButton(onClick = { showAddStudentDialog = true }) {
+                    Icon(imageVector = Icons.Default.Add, contentDescription = "Adicionar", modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("+ ALUNO", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+
+        if (studentStops.isEmpty()) {
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .padding(24.dp)
+                            .fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(imageVector = Icons.Default.School, contentDescription = "Sem alunos", modifier = Modifier.size(44.dp), tint = Color.Gray)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Nenhum aluno cadastrado na rota", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = SlateNavy)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text("Cadastre os alunos da perua para registrar o trajeto.", fontSize = 12.sp, color = Color.Gray, textAlign = TextAlign.Center)
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Button(
+                            onClick = { showAddStudentDialog = true },
+                            colors = ButtonDefaults.buttonColors(containerColor = YellowPrimary)
+                        ) {
+                            Icon(imageVector = Icons.Default.Add, contentDescription = null, tint = SlateNavy)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("CADASTRAR ALUNO", color = SlateNavy, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
         }
 
         items(studentStops) { stop ->
