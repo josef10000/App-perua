@@ -1,5 +1,6 @@
 package com.example.ui.driver
 
+import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
@@ -25,6 +26,7 @@ import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Button
@@ -43,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -154,6 +157,32 @@ fun DriverRouteScreen(
                         )
                     }
                 }
+            }
+        }
+
+        // WhatsApp Van Code Share Button
+        item {
+            val context = LocalContext.current
+            val vanCode = viewModel.driverProfile.vanIdentifier
+            Button(
+                onClick = {
+                    val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                        action = Intent.ACTION_SEND
+                        putExtra(Intent.EXTRA_TEXT, "Olá! Acompanhe a nossa perua escolar em tempo real baixando o aplicativo Rota Escolar e usando o Código da Perua: $vanCode")
+                        type = "text/plain"
+                    }
+                    val shareIntent = Intent.createChooser(sendIntent, "Enviar código da perua via WhatsApp")
+                    context.startActivity(shareIntent)
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = YellowPrimary),
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+            ) {
+                Icon(imageVector = Icons.Default.Share, contentDescription = "Compartilhar", tint = SlateNavy)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("ENVIAR CÓDIGO DA PERUA AOS PAIS (WHATSAPP)", color = SlateNavy, fontWeight = FontWeight.Bold, fontSize = 12.sp)
             }
         }
 

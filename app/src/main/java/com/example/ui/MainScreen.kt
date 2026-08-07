@@ -97,15 +97,13 @@ fun MainScreen(
     val driverNavItems = listOf(
         NavItem("Rota GPS", Icons.Default.DirectionsBus, 0),
         NavItem("Comunicados", Icons.Default.Campaign, 1),
-        NavItem("Pix", Icons.Default.QrCode, 2),
-        NavItem("Arquitetura", Icons.Default.Code, 3)
+        NavItem("Pix", Icons.Default.QrCode, 2)
     )
 
     val parentNavItems = listOf(
         NavItem("Mapa Vivo", Icons.Default.Map, 0),
         NavItem("Mural", Icons.Default.Notifications, 1),
-        NavItem("Pagamento", Icons.Default.Receipt, 2),
-        NavItem("Arquitetura", Icons.Default.Code, 3)
+        NavItem("Pagamento", Icons.Default.Receipt, 2)
     )
 
     Scaffold(
@@ -253,12 +251,10 @@ fun MainScreen(
                     role == UserRole.DRIVER && tab == 0 -> DriverRouteScreen(viewModel = viewModel)
                     role == UserRole.DRIVER && tab == 1 -> DriverAnnouncementsScreen(viewModel = viewModel)
                     role == UserRole.DRIVER && tab == 2 -> DriverPixSettingsScreen(viewModel = viewModel)
-                    role == UserRole.DRIVER && tab == 3 -> FirebaseArchitectureScreen()
 
                     role == UserRole.PARENT && tab == 0 -> ParentTrackingScreen(viewModel = viewModel)
                     role == UserRole.PARENT && tab == 1 -> ParentAnnouncementsScreen(viewModel = viewModel)
                     role == UserRole.PARENT && tab == 2 -> ParentPaymentScreen(viewModel = viewModel)
-                    role == UserRole.PARENT && tab == 3 -> FirebaseArchitectureScreen()
                 }
             }
         }
