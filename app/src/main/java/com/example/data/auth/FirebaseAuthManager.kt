@@ -46,7 +46,7 @@ class FirebaseAuthManager private constructor() {
         vanIdentifier = "Perua #102 - Mercedes Sprinter"
     )
 
-    private val _userProfileState = MutableStateFlow<UserProfile?>(defaultDemoProfile)
+    private val _userProfileState = MutableStateFlow<UserProfile?>(null)
     val userProfileState: StateFlow<UserProfile?> = _userProfileState.asStateFlow()
 
     private val _authResultState = MutableStateFlow<AuthResult>(AuthResult.Idle)
@@ -54,17 +54,23 @@ class FirebaseAuthManager private constructor() {
 
     init {
         try {
-            auth?.addAuthStateListener { firebaseAuth ->
-                val user = firebaseAuth.currentUser
-                _currentUserState.value = user
-                if (user != null) {
-                    fetchUserProfile(user.uid)
-                } else {
-                    _userProfileState.value = defaultDemoProfile
+            val currentAuth = auth
+            if (currentAuth != null) {
+                _currentUserState.value = currentAuth.currentUser
+                currentAuth.addAuthStateListener { firebaseAuth ->
+                    val user = firebaseAuth.currentUser
+                    _currentUserState.value = user
+                    if (user != null) {
+                        fetchUserProfile(user.uid)
+                    } else {
+                        _userProfileState.value = null
+                    }
                 }
+            } else {
+                _userProfileState.value = null
             }
         } catch (e: Exception) {
-            _userProfileState.value = defaultDemoProfile
+            _userProfileState.value = null
         }
     }
 

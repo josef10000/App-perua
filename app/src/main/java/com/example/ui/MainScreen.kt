@@ -84,8 +84,8 @@ fun MainScreen(
     val currentUser by authManager.currentUserState.collectAsState()
     val userProfile by authManager.userProfileState.collectAsState()
 
-    // Se o usuário não está autenticado e não há perfil local, exibe a AuthScreen
-    if (currentUser == null && userProfile == null) {
+    // Se o usuário não está autenticado no Firebase Auth ou não tem perfil carregado, exibe obrigatoriamente a AuthScreen (Tela de Login)
+    if (currentUser == null || userProfile == null) {
         AuthScreen(onAuthSuccess = { })
         return
     }
